@@ -5,8 +5,12 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "browserify client/main.js -o client/bundle.js",
-    "server": "http-server client"
+    "build": "browserify client/src/main.js -o client/bundle.js",
+    "http-server": "http-server client",
+    "watch": "npm-watch"
+  },
+  "watch": {
+    "build": "client/src/**/*.js"
   },
   "author": "",
   "license": "ISC",
@@ -14,5 +18,9 @@
     "browserify": "^10.2.4",
     "socket.io": "^1.3.5",
     "socket.io-client": "^1.3.5"
+  },
+  "devDependencies": {
+    "http-server": "^0.8.0",
+    "npm-watch": "0.0.0"
   }
 }

@@ -51,10 +51,10 @@ socket.on('connect', function () {
   console.log('connected')
   socket.emit('update_position', bunny.position)
 })
-// npm install --save browserify
+// npm install
 //
 // npm run <script-name>
-// npm run buildi
+// npm run build
 //
 // node index.js
 // http-server . <-p port>
