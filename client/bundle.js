@@ -68,7 +68,7 @@ socket.on('disconnection', function (id) {
 //
 // npm run <script-name>
 // npm run buildi
-//
+// 
 // node index.js
 // http-server . <-p port>
 

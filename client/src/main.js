@@ -63,10 +63,10 @@ socket.on('disconnection', function (id) {
   stage.removeChild(otherBunnies[id])
   delete otherBunnies[id];  
 })
-// npm install --save browserify
+// npm install
 //
 // npm run <script-name>
-// npm run buildi
+// npm run build
 //
 // node index.js
 // http-server . <-p port>
