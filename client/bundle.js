@@ -31,12 +31,37 @@ bunny.anchor.set(0.5, 0.5)
 // Add the bunny to the scene we are building.
 stage.addChild(bunny);
 
+console.log(KeyboardJS)
+//keyboard utility
+var keyboard = new KeyboardJS(true); //true for debug feedback
+
 // kick off the animation loop (defined below)
 animate();
 
 function animate() {
     // start the timer for the next animation loop
     requestAnimationFrame(animate);
+
+    var moving = false
+    //keyboard movement
+    if (keyboard.char('W')) {
+      bunny.position.y -= 5;
+      moving = true
+    }
+    if (keyboard.char('S')) {
+      bunny.position.y += 5
+      moving = true
+    }
+    if (keyboard.char('A')) {
+      bunny.position.x -= 5;
+      moving = true
+    }
+    if (keyboard.char('D')) {
+      bunny.position.x += 5;
+      moving = true
+    }
+    if (moving) socket.emit('update_position', {pos: bunny.position, model: bunny.model})
+
     // this is the main render call that makes pixi draw your container and its children.
     renderer.render(stage);
 }
@@ -83,7 +108,6 @@ socket.on('update_position', function (params) {
 
 socket.on('delete_player', function (id) {
   console.log('client with socket id ' + id + ' has disconected in client with socket id ' + socket.id)
-  console.log(otherBunnies[id])
   stage.removeChild(otherBunnies[id])
   delete otherBunnies[id];
 })
@@ -7115,4 +7139,6 @@ function KeyboardJS (debug) {
   });
   if (scope.debug) console.log("keyboardJS inited", "keyboardJS");
 }
+
+module.exports = KeyboardJS
 },{}]},{},[1]);

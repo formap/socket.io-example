@@ -19,3 +19,5 @@ function KeyboardJS (debug) {
   });
   if (scope.debug) console.log("keyboardJS inited", "keyboardJS");
 }
+
+module.exports = KeyboardJS

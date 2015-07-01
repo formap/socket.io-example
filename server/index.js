@@ -13,7 +13,6 @@ io.on('connection', function (socket) {
     params.id = socket.id
     players[params.id] = {pos: params.pos, model: params.model}
     socket.broadcast.emit('update_position', params)
-    console.log(players)
   })
   socket.emit('get_players', {players: players})
 })
