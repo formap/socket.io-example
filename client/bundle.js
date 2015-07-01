@@ -2,6 +2,8 @@
 (function (global){
 var serverURL = 'localhost:9000'
 var socket = require('socket.io-client')(serverURL)
+var Bunny = require('../shared/Bunny.js')
+var KeyboardJS = require('../utility/Keyboard.js')
 
 // You can use either `new PIXI.WebGLRenderer`, `new PIXI.CanvasRenderer`, or `PIXI.autoDetectRenderer`
 // which will try to choose the best renderer for the environment you are in.
@@ -16,6 +18,8 @@ var stage = new PIXI.Container();
 // This creates a texture from a 'bunny.png' image.
 var bunnyTexture = PIXI.Texture.fromImage('bunny.png');
 var bunny = new PIXI.Sprite(bunnyTexture);
+bunny.model = new Bunny(Math.random()*0xFFFFFF + 0xFF000000);
+bunny.tint = bunny.model.color
 global.bunny = bunny
 var otherBunnies = {}
 
@@ -37,21 +41,28 @@ function animate() {
     renderer.render(stage);
 }
 
-socket.on('update_position', function (pos) {
-  var sprite = otherBunnies[pos.id]
+socket.on('update_position', function (params) {
+  var sprite = otherBunnies[params.id]
   if (!sprite) {
     sprite = new PIXI.Sprite(bunnyTexture)
     stage.addChild(sprite)
-    otherBunnies[pos.id] = sprite
+    otherBunnies[params.id] = sprite
     sprite.anchor.set(0.5, 0.5)
+    sprite.model = params.model;
+    sprite.tint = sprite.model.color
   }
-  sprite.position.x = pos.x
-  sprite.position.y = pos.y
+  sprite.position.x = params.pos.x
+  sprite.position.y = params.pos.y
 })
 
 socket.on('connect', function () {
   console.log('connected')
-  socket.emit('update_position', bunny.position)
+  socket.emit('update_position', {pos: bunny.position, model: bunny.model})
+})
+
+socket.on('disconnection', function (id) {
+  stage.removeChild(otherBunnies[id])
+  delete otherBunnies[id];  
 })
 // npm install --save browserify
 //
@@ -62,7 +73,7 @@ socket.on('connect', function () {
 // http-server . <-p port>
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"socket.io-client":2}],2:[function(require,module,exports){
+},{"../shared/Bunny.js":52,"../utility/Keyboard.js":53,"socket.io-client":2}],2:[function(require,module,exports){
 
 module.exports = require('./lib/');
 
@@ -7059,4 +7070,33 @@ function toArray(list, index) {
     return array
 }
 
+},{}],52:[function(require,module,exports){
+function Bunny (color) {
+	this.color = color
+}
+
+//Bunny.prototype.updatePosition
+module.exports = Bunny
+},{}],53:[function(require,module,exports){
+/*
+* Keyboard utility, from https://github.com/dasilvacontin/KeyboardJS/blob/master/Keyboard.js
+*	prevent is omitted. prevent treat the default behavior of a key interactig with the browser (tab, arrow keys, etc)
+*/
+function KeyboardJS (debug) {
+  this.keys = [];
+  this.char = function(x) { return this.keys[x.charCodeAt(0)];}
+  this.debug = debug;
+  var scope = this;
+  document.addEventListener("keydown", function (evt) {
+  	//pressing always the key because default pauses after first keydown
+  	scope.keys[evt.keyCode] = true;
+  	if (scope.debug) console.log('-- keyIsDown ASCII('+evt.keyCode+') CHAR('+String.fromCharCode(evt.keyCode)+')');
+  });
+  document.addEventListener("keyup", function (evt) {
+  	//unpressing key
+  	scope.keys[evt.keyCode] = false;
+  	if (scope.debug) console.log('-- keyIsUp ASCII('+evt.keyCode+') CHAR('+String.fromCharCode(evt.keyCode)+')');
+  });
+  if (scope.debug) console.log("keyboardJS inited", "keyboardJS");
+}
 },{}]},{},[1]);
