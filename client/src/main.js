@@ -1,7 +1,7 @@
 var serverURL = 'localhost:9000'
 var socket = require('socket.io-client')(serverURL)
-var Bunny = require('../shared/Bunny.js')
-var KeyboardJS = require('../utility/Keyboard.js')
+var Bunny = require('../../shared/Bunny.js')
+var KeyboardJS = require('../../utility/Keyboard.js')
 
 // You can use either `new PIXI.WebGLRenderer`, `new PIXI.CanvasRenderer`, or `PIXI.autoDetectRenderer`
 // which will try to choose the best renderer for the environment you are in.
@@ -38,46 +38,31 @@ function animate() {
     // this is the main render call that makes pixi draw your container and its children.
     renderer.render(stage);
 }
+
 socket.on('connect', function () {
   console.log('connected')
-  var sprite = otherBunnies[params.id]
-  if (!sprite) {
-    sprite = new PIXI.Sprite(bunnyTexture)
-    stage.addChild(sprite)
-    otherBunnies[params.id] = sprite
-    sprite.anchor.set(0.5, 0.5)
-    sprite.model = params.model;
-    sprite.tint = sprite.model.color
-  }
-  sprite.position.x = params.pos.x
-  sprite.position.y = params.pos.y
-  socket.emit('new_player', {model: bunny.model, pos: bunny.position})
-})
-
-socket.on('new_player', function (params) {
-  var sprite = otherBunnies[params.id]
-  if (!sprite) {
-    sprite = new PIXI.Sprite(bunnyTexture)
-    stage.addChild(sprite)
-    otherBunnies[params.id] = sprite
-    sprite.anchor.set(0.5, 0.5)
-    sprite.model = params.model;
-    sprite.tint = sprite.model.color
-  }
-  sprite.position.x = params.pos.x
-  sprite.position.y = params.pos.y
-})
-
-socket.on('disconnection', function (id) {
-  stage.removeChild(otherBunnies[id])
-  delete otherBunnies[id];  
+  console.log(socket.id)
+  socket.emit('update_position', {pos: bunny.position, model: bunny.model})
 })
 /*
+socket.on('get_players', function (params) {
+  params.players.forEach(function (player) {
+    var sprite = new PIXI.Sprite(bunnyTexture)
+    sprite.anchor.set(0.5, 0.5)
+    sprite.model = player.model;
+    sprite.tint = sprite.model.color
+    sprite.position.x = player.pos.x
+    sprite.position.y = player.pos.y
+    stage.addChild(sprite)
+  })
+})
+*/
 socket.on('update_position', function (params) {
   var sprite = otherBunnies[params.id]
   if (!sprite) {
     sprite = new PIXI.Sprite(bunnyTexture)
     stage.addChild(sprite)
+    console.log('adding bunny to otherBunnies with id ' + params.id)
     otherBunnies[params.id] = sprite
     sprite.anchor.set(0.5, 0.5)
     sprite.model = params.model;
@@ -86,5 +71,10 @@ socket.on('update_position', function (params) {
   sprite.position.x = params.pos.x
   sprite.position.y = params.pos.y
 })
-  //socket.emit('update_position', {pos: bunny.position, model: bunny.model})
-*/
+
+socket.on('delete_player', function (id) {
+  console.log('client with socket id ' + id + ' has disconected in client with socket id ' + socket.id)
+  console.log(otherBunnies[id])
+  stage.removeChild(otherBunnies[id])
+  delete otherBunnies[id];
+})

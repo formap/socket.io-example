@@ -2,8 +2,8 @@
 (function (global){
 var serverURL = 'localhost:9000'
 var socket = require('socket.io-client')(serverURL)
-var Bunny = require('../shared/Bunny.js')
-var KeyboardJS = require('../utility/Keyboard.js')
+var Bunny = require('../../shared/Bunny.js')
+var KeyboardJS = require('../../utility/Keyboard.js')
 
 // You can use either `new PIXI.WebGLRenderer`, `new PIXI.CanvasRenderer`, or `PIXI.autoDetectRenderer`
 // which will try to choose the best renderer for the environment you are in.
@@ -41,11 +41,30 @@ function animate() {
     renderer.render(stage);
 }
 
+socket.on('connect', function () {
+  console.log('connected')
+  console.log(socket.id)
+  socket.emit('update_position', {pos: bunny.position, model: bunny.model})
+})
+/*
+socket.on('get_players', function (params) {
+  params.players.forEach(function (player) {
+    var sprite = new PIXI.Sprite(bunnyTexture)
+    sprite.anchor.set(0.5, 0.5)
+    sprite.model = player.model;
+    sprite.tint = sprite.model.color
+    sprite.position.x = player.pos.x
+    sprite.position.y = player.pos.y
+    stage.addChild(sprite)
+  })
+})
+*/
 socket.on('update_position', function (params) {
   var sprite = otherBunnies[params.id]
   if (!sprite) {
     sprite = new PIXI.Sprite(bunnyTexture)
     stage.addChild(sprite)
+    console.log('adding bunny to otherBunnies with id ' + params.id)
     otherBunnies[params.id] = sprite
     sprite.anchor.set(0.5, 0.5)
     sprite.model = params.model;
@@ -55,25 +74,15 @@ socket.on('update_position', function (params) {
   sprite.position.y = params.pos.y
 })
 
-socket.on('connect', function () {
-  console.log('connected')
-  socket.emit('update_position', {pos: bunny.position, model: bunny.model})
-})
-
-socket.on('disconnection', function (id) {
+socket.on('delete_player', function (id) {
+  console.log('client with socket id ' + id + ' has disconected in client with socket id ' + socket.id)
+  console.log(otherBunnies[id])
   stage.removeChild(otherBunnies[id])
-  delete otherBunnies[id];  
+  delete otherBunnies[id];
 })
-// npm install --save browserify
-//
-// npm run <script-name>
-// npm run buildi
-// 
-// node index.js
-// http-server . <-p port>
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"../shared/Bunny.js":52,"../utility/Keyboard.js":53,"socket.io-client":2}],2:[function(require,module,exports){
+},{"../../shared/Bunny.js":52,"../../utility/Keyboard.js":53,"socket.io-client":2}],2:[function(require,module,exports){
 
 module.exports = require('./lib/');
 
