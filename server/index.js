@@ -15,7 +15,7 @@ io.on('connection', function (socket) {
     socket.broadcast.emit('update_position', params)
     console.log(players)
   })
-  //socket.emit('get_players', {players: players})
+  socket.emit('get_players', {players: players})
 })
 
 console.log('server started on port', port)

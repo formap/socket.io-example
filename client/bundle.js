@@ -46,19 +46,25 @@ socket.on('connect', function () {
   console.log(socket.id)
   socket.emit('update_position', {pos: bunny.position, model: bunny.model})
 })
-/*
+
 socket.on('get_players', function (params) {
-  params.players.forEach(function (player) {
-    var sprite = new PIXI.Sprite(bunnyTexture)
-    sprite.anchor.set(0.5, 0.5)
-    sprite.model = player.model;
-    sprite.tint = sprite.model.color
-    sprite.position.x = player.pos.x
-    sprite.position.y = player.pos.y
-    stage.addChild(sprite)
-  })
+  console.log(params)
+  var keys = Object.keys(params.players)
+  var i = 0
+  if (params.players !== {}) {
+    for (i=0;i<keys.length;++i) {
+      console.log('key ' + keys[i] + ' player params ' + params.players[keys[i]])
+      var sprite = new PIXI.Sprite(bunnyTexture)
+      sprite.anchor.set(0.5, 0.5)
+      sprite.model = params.players[keys[i]].model
+      sprite.tint = sprite.model.color
+      sprite.position.x = params.players[keys[i]].pos.x
+      sprite.position.y = params.players[keys[i]].pos.y
+      stage.addChild(sprite)
+    }
+  }
 })
-*/
+
 socket.on('update_position', function (params) {
   var sprite = otherBunnies[params.id]
   if (!sprite) {
