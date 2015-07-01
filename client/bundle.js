@@ -60,6 +60,7 @@ socket.on('get_players', function (params) {
       sprite.tint = sprite.model.color
       sprite.position.x = params.players[keys[i]].pos.x
       sprite.position.y = params.players[keys[i]].pos.y
+      otherBunnies[keys[i]] = sprite
       stage.addChild(sprite)
     }
   }
