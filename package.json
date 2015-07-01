@@ -12,6 +12,7 @@
   "license": "ISC",
   "dependencies": {
     "browserify": "^10.2.4",
+    "http-server": "^0.8.0",
     "socket.io": "^1.3.5",
     "socket.io-client": "^1.3.5"
   }
