@@ -10,7 +10,9 @@ io.on('connection', function (socket) {
   })
   socket.on('new_player', function (params) {
   	players[params.id] = params.model
+  	socket.broadcast.emit('disconnection', socket.id)
   })
+  socket.emit('get_players', {players: players})
   /*
   socket.on('update_position', function (params) {
     params.id = socket.id

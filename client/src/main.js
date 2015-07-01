@@ -38,8 +38,23 @@ function animate() {
     // this is the main render call that makes pixi draw your container and its children.
     renderer.render(stage);
 }
+socket.on('connect', function () {
+  console.log('connected')
+  var sprite = otherBunnies[params.id]
+  if (!sprite) {
+    sprite = new PIXI.Sprite(bunnyTexture)
+    stage.addChild(sprite)
+    otherBunnies[params.id] = sprite
+    sprite.anchor.set(0.5, 0.5)
+    sprite.model = params.model;
+    sprite.tint = sprite.model.color
+  }
+  sprite.position.x = params.pos.x
+  sprite.position.y = params.pos.y
+  socket.emit('new_player', {model: bunny.model, pos: bunny.position})
+})
 
-socket.on('update_position', function (params) {
+socket.on('new_player', function (params) {
   var sprite = otherBunnies[params.id]
   if (!sprite) {
     sprite = new PIXI.Sprite(bunnyTexture)
@@ -53,20 +68,23 @@ socket.on('update_position', function (params) {
   sprite.position.y = params.pos.y
 })
 
-socket.on('connect', function () {
-  console.log('connected')
-  socket.emit('new_player', {model: bunny.model})
-  //socket.emit('update_position', {pos: bunny.position, model: bunny.model})
-})
-
 socket.on('disconnection', function (id) {
   stage.removeChild(otherBunnies[id])
   delete otherBunnies[id];  
 })
-// npm install
-//
-// npm run <script-name>
-// npm run build
-//
-// node index.js
-// http-server . <-p port>
+/*
+socket.on('update_position', function (params) {
+  var sprite = otherBunnies[params.id]
+  if (!sprite) {
+    sprite = new PIXI.Sprite(bunnyTexture)
+    stage.addChild(sprite)
+    otherBunnies[params.id] = sprite
+    sprite.anchor.set(0.5, 0.5)
+    sprite.model = params.model;
+    sprite.tint = sprite.model.color
+  }
+  sprite.position.x = params.pos.x
+  sprite.position.y = params.pos.y
+})
+  //socket.emit('update_position', {pos: bunny.position, model: bunny.model})
+*/
