@@ -1,7 +1,10 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 (function (global){
 var serverURL = 'localhost:9000'
+var projectPath = '../..'
 var socket = require('socket.io-client')(serverURL)
+var Bunny = require('../../shared/Bunny.js')
+var KeyboardJS = require('../../utility/Keyboard.js')
 
 // You can use either `new PIXI.WebGLRenderer`, `new PIXI.CanvasRenderer`, or `PIXI.autoDetectRenderer`
 // which will try to choose the best renderer for the environment you are in.
@@ -13,11 +16,17 @@ document.body.appendChild(renderer.view);
 // You need to create a root container that will hold the scene you want to draw.
 var stage = new PIXI.Container();
 
-// This creates a texture from a 'bunny.png' image.
-var bunnyTexture = PIXI.Texture.fromImage('bunny.png');
+// Managing players
+var bunnyTexture = PIXI.Texture.fromImage('img/bunny.png');
 var bunny = new PIXI.Sprite(bunnyTexture);
+bunny.model = new Bunny(Math.random()*0xFFFFFF + 0xFF000000);
+bunny.tint = bunny.model.color
 global.bunny = bunny
 var otherBunnies = {}
+
+// Managing pickups
+var pickupTexture = PIXI.Texture.fromImage('img/coin.png')
+var pickups = {}
 
 // Setup the position and scale of the bunny
 bunny.position.x = Math.random() * 800
@@ -27,42 +36,115 @@ bunny.anchor.set(0.5, 0.5)
 // Add the bunny to the scene we are building.
 stage.addChild(bunny);
 
+console.log(KeyboardJS)
+//keyboard utility
+var keyboard = new KeyboardJS(true); //true for debug feedback
+
 // kick off the animation loop (defined below)
 animate();
 
 function animate() {
     // start the timer for the next animation loop
     requestAnimationFrame(animate);
+
+    var moving = false
+    //keyboard movement
+    if (keyboard.char('W')) {
+      bunny.position.y -= 5;
+      moving = true
+    }
+    if (keyboard.char('S')) {
+      bunny.position.y += 5
+      moving = true
+    }
+    if (keyboard.char('A')) {
+      bunny.position.x -= 5;
+      moving = true
+    }
+    if (keyboard.char('D')) {
+      bunny.position.x += 5;
+      moving = true
+    }
+    if (moving) socket.emit('update_position', {pos: bunny.position, model: bunny.model})
+
     // this is the main render call that makes pixi draw your container and its children.
     renderer.render(stage);
 }
 
-socket.on('update_position', function (pos) {
-  var sprite = otherBunnies[pos.id]
+/*socket management*/
+
+
+//connection socket management
+socket.on('connect', function () {
+  console.log('connected')
+  console.log(socket.id)
+  socket.emit('update_position', {pos: bunny.position, model: bunny.model})
+})
+
+//getting pickups socket
+socket.on('get_pickups', function (params) {
+  console.log('getting pickups')
+  for (var pickupId in params.pickups) {
+    console.log('key ' + pickupId + ' pickup params ' + params.pickups[pickupId])
+    var sprite = new PIXI.Sprite(pickupTexture)
+    sprite.anchor.set(0.5, 0.5)
+    sprite.scale.set(0.5,0.5)
+    sprite.position.x = params.pickups[pickupId].pos.x
+    sprite.position.y = params.pickups[pickupId].pos.y
+    pickups[pickupId] = sprite
+    stage.addChild(sprite)
+  }
+})
+
+//getting players socket
+socket.on('get_players', function (params) {
+  console.log('getting players')
+  var keys = Object.keys(params.players)
+  var i = 0
+  for (var playerId in params.players) {
+    console.log('key ' + keys[i] + ' player params ' + params.players[playerId])
+    var sprite = new PIXI.Sprite(bunnyTexture)
+    sprite.anchor.set(0.5, 0.5)
+    sprite.model = params.players[playerId].model
+    sprite.tint = sprite.model.color
+    sprite.position.x = params.players[playerId].pos.x
+    sprite.position.y = params.players[playerId].pos.y
+    otherBunnies[keys[i]] = sprite
+    stage.addChild(sprite)
+  }
+})
+
+//updating position socket
+socket.on('update_position', function (params) {
+  var sprite = otherBunnies[params.id]
   if (!sprite) {
     sprite = new PIXI.Sprite(bunnyTexture)
     stage.addChild(sprite)
-    otherBunnies[pos.id] = sprite
+    console.log('adding bunny to otherBunnies with id ' + params.id)
+    otherBunnies[params.id] = sprite
     sprite.anchor.set(0.5, 0.5)
+    sprite.model = params.model;
+    sprite.tint = sprite.model.color
   }
-  sprite.position.x = pos.x
-  sprite.position.y = pos.y
+  sprite.position.x = params.pos.x
+  sprite.position.y = params.pos.y
 })
 
-socket.on('connect', function () {
-  console.log('connected')
-  socket.emit('update_position', bunny.position)
+//pickup collected by player(can be this or another)
+socket.on('pickup_collected', function (pickupId) {
+  stage.removeChild(pickups[pickupId])
+  delete pickups[pickupId]
 })
-// npm install --save browserify
-//
-// npm run <script-name>
-// npm run buildi
-// 
-// node index.js
-// http-server . <-p port>
+
+//other players leaving the game
+socket.on('delete_player', function (id) {
+  console.log('client with socket id ' + id + ' has disconected in client with socket id ' + socket.id)
+  stage.removeChild(otherBunnies[id])
+  delete otherBunnies[id];
+})
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"socket.io-client":2}],2:[function(require,module,exports){
+},{"../../shared/Bunny.js":52,"../../utility/Keyboard.js":53,"socket.io-client":2}],2:[function(require,module,exports){
 
 module.exports = require('./lib/');
 
@@ -7059,4 +7141,35 @@ function toArray(list, index) {
     return array
 }
 
+},{}],52:[function(require,module,exports){
+function Bunny (color) {
+	this.color = color
+}
+
+//Bunny.prototype.updatePosition
+module.exports = Bunny
+},{}],53:[function(require,module,exports){
+/*
+* Keyboard utility, from https://github.com/dasilvacontin/KeyboardJS/blob/master/Keyboard.js
+*	prevent is omitted. prevent treat the default behavior of a key interactig with the browser (tab, arrow keys, etc)
+*/
+function KeyboardJS (debug) {
+  this.keys = [];
+  this.char = function(x) { return this.keys[x.charCodeAt(0)];}
+  this.debug = debug;
+  var scope = this;
+  document.addEventListener("keydown", function (evt) {
+  	//pressing always the key because default pauses after first keydown
+  	scope.keys[evt.keyCode] = true;
+  	if (scope.debug) console.log('-- keyIsDown ASCII('+evt.keyCode+') CHAR('+String.fromCharCode(evt.keyCode)+')');
+  });
+  document.addEventListener("keyup", function (evt) {
+  	//unpressing key
+  	scope.keys[evt.keyCode] = false;
+  	if (scope.debug) console.log('-- keyIsUp ASCII('+evt.keyCode+') CHAR('+String.fromCharCode(evt.keyCode)+')');
+  });
+  if (scope.debug) console.log("keyboardJS inited", "keyboardJS");
+}
+
+module.exports = KeyboardJS
 },{}]},{},[1]);
