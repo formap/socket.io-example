@@ -1,7 +1,7 @@
 // Homework:
-// control de teclat + moviment sincronitzat
-// envia dades als nous usuaris
-// detectar desconexions
+// -control de teclat + moviment sincronitzat
+// -envia dades als nous usuaris
+// -detectar desconexions
 // modularitzar bunny model
 
 //npm run build
@@ -82,15 +82,11 @@ socket.on('update_position', function (pos) {
 })
 
 socket.on('inform_disconnection', function (id) {
-  console.log(id + ' disconnected')
   var sprite = otherBunnies[id]
   if (sprite) stage.removeChild(sprite)
   delete otherBunnies[id]
 })
 
 socket.on('connect', function () {
-  console.log(socket.id + ' connected')
   socket.emit('update_position', bunny.position)
-  socket.emit('just_connected', bunny.position)
 })
-

@@ -114,7 +114,6 @@ socket.on('inform_disconnection', function (id) {
 socket.on('connect', function () {
   console.log(socket.id + ' connected')
   socket.emit('update_position', bunny.position)
-  socket.emit('just_connected', bunny.position)
 })
 
 
