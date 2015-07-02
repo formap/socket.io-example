@@ -21,6 +21,6 @@
   },
   "devDependencies": {
     "http-server": "^0.8.0",
-    "npm-watch": "0.0.0"
+    "npm-watch": "^0.0.0"
   }
 }
