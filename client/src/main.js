@@ -1,14 +1,16 @@
 // Homework:
-// -control de teclat + moviment sincronitzat
-// -envia dades als nous usuaris
-// -detectar desconexions
-// modularitzar bunny model
+// Display del username i la puntuacio
+// a sota del jugador, que es demani el
+// username amb prompt() i amb Text de pixi
+
+// El username s'ha de demanar nomes la primera vegada
 
 //npm run build
 //node .\server\index.js (altre consola)
 //http-server client -p 8080
 
 var KeyboardJS = require('./Keyboard.js')
+var Player = require('./Player.js')
 
 var serverURL = 'localhost:9000'
 var socket = require('socket.io-client')(serverURL)
@@ -23,25 +25,16 @@ document.body.appendChild(renderer.view)
 global.stage = new PIXI.Container()
 
 // This creates a texture from a 'bunny.png' image.
-var bunnyTexture = PIXI.Texture.fromImage('bunny.png')
+var playerTexture = PIXI.Texture.fromImage('sanic.png')
 var ringTexture = PIXI.Texture.fromImage('ring.png')
-var bunny = new PIXI.Sprite(bunnyTexture)
-global.bunny = bunny
-var bunnyColorArray = [0x0000FF, 0x00FF00, 0xFF0000, 0xFFFFFF]
-bunny.position.color = bunnyColorArray[Math.trunc(Math.random() * bunnyColorArray.length)]
-bunny.tint = bunny.position.color
-global.otherBunnies = {}
+var sprite = new PIXI.Sprite(playerTexture)
+var player = new Player(sprite)
+global.player = player
+global.otherPlayers = {}
 global.pickUps = {}
 
-// Setup the position and scale of the bunny
-bunny.position.x = Math.random() * 800
-bunny.position.y = Math.random() * 600
-bunny.anchor.set(0.5, 0.5)
-bunny.scale.x = 0.1
-bunny.scale.y = 0.1
-
 // Add the bunny to the scene we are building.
-stage.addChild(bunny)
+stage.addChild(player.sprite)
 
 // kick off the animation loop (defined below)
 animate()
@@ -50,12 +43,12 @@ function animate() {
     // start the timer for the next animation loop
     requestAnimationFrame(animate)
 
-    var oldPos = bunny.position.clone()
+    var oldPos = player.sprite.position.clone()
 
     handleInput()
 
-    if (oldPos.x != bunny.position.x || oldPos.y != bunny.position.y) {
-      socket.emit('update_position', bunny.position)
+    if (oldPos.x != player.sprite.position.x || oldPos.y != player.sprite.position.y) {
+      socket.emit('update_position', player.sprite.position)
     }
 
     // this is the main render call that makes pixi draw your container and its children.
@@ -63,28 +56,27 @@ function animate() {
 }
 
 function handleInput() {
-  if (keyboard.char('W')) bunny.position.y -= 2.0
-  else if (keyboard.char('S')) bunny.position.y += 2.0
+  var speed = 10.0
+  if (keyboard.char('W')) player.sprite.position.y -= speed
+  else if (keyboard.char('S')) player.sprite.position.y += speed
 
-  if (keyboard.char('A')) bunny.position.x -= 2.0
-  else if (keyboard.char('D')) bunny.position.x += 2.0
+  if (keyboard.char('A')) player.sprite.position.x -= speed
+  else if (keyboard.char('D')) player.sprite.position.x += speed
 }
 
 socket.on('update_position', function (pos) {
   //pos {x, y, id}
-  var sprite = otherBunnies[pos.id]
+  var sprite = otherPlayers[pos.id]
   if (!sprite) {
-    sprite = new PIXI.Sprite(bunnyTexture)
-    stage.addChild(sprite)
-    otherBunnies[pos.id] = sprite
-    sprite.anchor.set(0.5, 0.5)
-    sprite.scale.x = 0.1
-    sprite.scale.y = 0.1
-    sprite.tint = pos.color
+    sprite = new PIXI.Sprite(playerTexture)
+    var player = new Player(sprite)
+    stage.addChild(player.sprite)
+    otherPlayers[pos.id] = player.sprite
   }
-  sprite.position.x = pos.x
-  sprite.position.y = pos.y
-  sprite.position.color = pos.color
+  player.sprite.position.x = pos.x
+  player.sprite.position.y = pos.y
+  player.sprite.position.color = pos.color
+  player.sprite.tint = pos.color
 })
 
 socket.on('update_pickUp', function (pu) {
@@ -100,9 +92,9 @@ socket.on('update_pickUp', function (pu) {
 })
 
 socket.on('inform_disconnection', function (id) {
-  var sprite = otherBunnies[id]
+  var sprite = otherPlayers[id]
   if (sprite) stage.removeChild(sprite)
-  delete otherBunnies[id]
+  delete otherPlayers[id]
 })
 
 socket.on('delete_pickUp', function (id) {
@@ -112,5 +104,5 @@ socket.on('delete_pickUp', function (id) {
 })
 
 socket.on('connect', function () {
-  socket.emit('update_position', bunny.position)
+  socket.emit('update_position', player.sprite.position)
 })
