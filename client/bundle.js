@@ -22,14 +22,14 @@ module.exports = KeyboardJS
 },{}],2:[function(require,module,exports){
 (function (global){
 // Homework:
-// control de teclat + moviment sincronitzat
-// envia dades als nous usuaris
-// detectar desconexions
+// -control de teclat + moviment sincronitzat
+// -envia dades als nous usuaris
+// -detectar desconexions
 // modularitzar bunny model
 
 //npm run build
-//node .\index.js (altre consola)
-//http-server . -p 8080
+//node .\server\index.js (altre consola)
+//http-server client -p 8080
 
 var KeyboardJS = require('./Keyboard.js')
 
@@ -47,17 +47,21 @@ global.stage = new PIXI.Container()
 
 // This creates a texture from a 'bunny.png' image.
 var bunnyTexture = PIXI.Texture.fromImage('bunny.png')
+var ringTexture = PIXI.Texture.fromImage('ring.png')
 var bunny = new PIXI.Sprite(bunnyTexture)
 global.bunny = bunny
 var bunnyColorArray = [0x0000FF, 0x00FF00, 0xFF0000, 0xFFFFFF]
 bunny.position.color = bunnyColorArray[Math.trunc(Math.random() * bunnyColorArray.length)]
 bunny.tint = bunny.position.color
 global.otherBunnies = {}
+global.pickUps = {}
 
 // Setup the position and scale of the bunny
 bunny.position.x = Math.random() * 800
 bunny.position.y = Math.random() * 600
 bunny.anchor.set(0.5, 0.5)
+bunny.scale.x = 0.1
+bunny.scale.y = 0.1
 
 // Add the bunny to the scene we are building.
 stage.addChild(bunny)
@@ -97,6 +101,8 @@ socket.on('update_position', function (pos) {
     stage.addChild(sprite)
     otherBunnies[pos.id] = sprite
     sprite.anchor.set(0.5, 0.5)
+    sprite.scale.x = 0.1
+    sprite.scale.y = 0.1
     sprite.tint = pos.color
   }
   sprite.position.x = pos.x
@@ -104,18 +110,33 @@ socket.on('update_position', function (pos) {
   sprite.position.color = pos.color
 })
 
+socket.on('update_pickUp', function (pu) {
+  var sprite = pickUps[pu.id]
+  if (!sprite) {
+    sprite = new PIXI.Sprite(ringTexture)
+    stage.addChild(sprite)
+    pickUps[pu.id] = sprite
+    sprite.anchor.set(0.5, 0.5)
+  }
+  sprite.position.x = pu.x
+  sprite.position.y = pu.y
+})
+
 socket.on('inform_disconnection', function (id) {
-  console.log(id + ' disconnected')
   var sprite = otherBunnies[id]
   if (sprite) stage.removeChild(sprite)
   delete otherBunnies[id]
 })
 
-socket.on('connect', function () {
-  console.log(socket.id + ' connected')
-  socket.emit('update_position', bunny.position)
+socket.on('delete_pickUp', function (id) {
+  var sprite = pickUps[id]
+  if (sprite) stage.removeChild(sprite)
+  delete pickUps[id]
 })
 
+socket.on('connect', function () {
+  socket.emit('update_position', bunny.position)
+})
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 },{"./Keyboard.js":1,"socket.io-client":3}],3:[function(require,module,exports){
