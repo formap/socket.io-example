@@ -38,8 +38,7 @@ io.on('connection', function (socket) {
         {pos: pickups[pickupId].pos, radium: pickups[pickupId].radium}
       )
       if (collide) {
-        socket.broadcast.emit('pickup_collected', pickupId)
-        socket.emit('pickup_collected', pickupId)
+        io.sockets.emit('pickup_collected', pickupId)
         delete pickups[pickupId]
       }
     }
