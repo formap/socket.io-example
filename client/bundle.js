@@ -15,13 +15,17 @@ document.body.appendChild(renderer.view);
 // You need to create a root container that will hold the scene you want to draw.
 var stage = new PIXI.Container();
 
-// This creates a texture from a 'bunny.png' image.
-var bunnyTexture = PIXI.Texture.fromImage('bunny.png');
+// Managing players
+var bunnyTexture = PIXI.Texture.fromImage('img/bunny.png');
 var bunny = new PIXI.Sprite(bunnyTexture);
 bunny.model = new Bunny(Math.random()*0xFFFFFF + 0xFF000000);
 bunny.tint = bunny.model.color
 global.bunny = bunny
 var otherBunnies = {}
+
+// Managing pickups
+var pickupTexture = PIXI.Texture.fromImage('img/coin.png')
+var pickups = {}
 
 // Setup the position and scale of the bunny
 bunny.position.x = Math.random() * 800
@@ -66,31 +70,50 @@ function animate() {
     renderer.render(stage);
 }
 
+/*socket management*/
+
+
+//connection socket management
 socket.on('connect', function () {
   console.log('connected')
   console.log(socket.id)
   socket.emit('update_position', {pos: bunny.position, model: bunny.model})
 })
 
-socket.on('get_players', function (params) {
-  console.log(params)
-  var keys = Object.keys(params.players)
-  var i = 0
-  if (params.players !== {}) {
-    for (i=0;i<keys.length;++i) {
-      console.log('key ' + keys[i] + ' player params ' + params.players[keys[i]])
-      var sprite = new PIXI.Sprite(bunnyTexture)
-      sprite.anchor.set(0.5, 0.5)
-      sprite.model = params.players[keys[i]].model
-      sprite.tint = sprite.model.color
-      sprite.position.x = params.players[keys[i]].pos.x
-      sprite.position.y = params.players[keys[i]].pos.y
-      otherBunnies[keys[i]] = sprite
-      stage.addChild(sprite)
-    }
+//getting pickups socket
+socket.on('get_pickups', function (params) {
+  console.log('getting pickups')
+  for (var pickupId in params.pickups) {
+    console.log('key ' + pickupId + ' pickup params ' + params.pickups[pickupId])
+    var sprite = new PIXI.Sprite(pickupTexture)
+    sprite.anchor.set(0.5, 0.5)
+    sprite.scale.set(0.5,0.5)
+    sprite.position.x = params.pickups[pickupId].pos.x
+    sprite.position.y = params.pickups[pickupId].pos.y
+    pickups[pickupId] = sprite
+    stage.addChild(sprite)
   }
 })
 
+//getting players socket
+socket.on('get_players', function (params) {
+  console.log('getting players')
+  var keys = Object.keys(params.players)
+  var i = 0
+  for (var playerId in params.players) {
+    console.log('key ' + keys[i] + ' player params ' + params.players[playerId])
+    var sprite = new PIXI.Sprite(bunnyTexture)
+    sprite.anchor.set(0.5, 0.5)
+    sprite.model = params.players[playerId].model
+    sprite.tint = sprite.model.color
+    sprite.position.x = params.players[playerId].pos.x
+    sprite.position.y = params.players[playerId].pos.y
+    otherBunnies[keys[i]] = sprite
+    stage.addChild(sprite)
+  }
+})
+
+//updating position socket
 socket.on('update_position', function (params) {
   var sprite = otherBunnies[params.id]
   if (!sprite) {
@@ -106,6 +129,7 @@ socket.on('update_position', function (params) {
   sprite.position.y = params.pos.y
 })
 
+//other players leaving the game
 socket.on('delete_player', function (id) {
   console.log('client with socket id ' + id + ' has disconected in client with socket id ' + socket.id)
   stage.removeChild(otherBunnies[id])
