@@ -3,14 +3,20 @@ var io = require('socket.io')(port)
 var players = {}
 var pickups = {}
 var mapDimensions = {width: 800, height: 600}
+var Physics = require('../utility/Physics.js')
+var physics = new Physics()
+
+console.log(Physics)
+console.log(physics)
 
 //generating pickups
 for (var i = 0; i < 3; ++i) {
-  pickups[''+i] = { 
+  pickups[i] = {
     pos: {
       x: Math.random()*mapDimensions.width, 
       y: Math.random()*mapDimensions.height
-    }
+    },
+    radium: 8
   }
 }
 
@@ -25,8 +31,20 @@ io.on('connection', function (socket) {
   })
   socket.on('update_position', function (params) {
     params.id = socket.id
-    players[params.id] = {pos: params.pos, model: params.model}
+    players[params.id] = {pos: params.pos, model: params.model, radium:25}
+    for (pickupId in pickups) {
+      var collide = physics.objectsCollide(
+        {pos: players[params.id].pos, radium: players[params.id].radium},
+        {pos: pickups[pickupId].pos, radium: pickups[pickupId].radium}
+      )
+      if (collide) {
+        socket.broadcast.emit('pickup_collected', pickupId)
+        socket.emit('pickup_collected', pickupId)
+        delete pickups[pickupId]
+      }
+    }
     socket.broadcast.emit('update_position', params)
+
   })
 })
 

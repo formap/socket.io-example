@@ -1,4 +1,5 @@
 var serverURL = 'localhost:9000'
+var projectPath = '../..'
 var socket = require('socket.io-client')(serverURL)
 var Bunny = require('../../shared/Bunny.js')
 var KeyboardJS = require('../../utility/Keyboard.js')
@@ -125,6 +126,12 @@ socket.on('update_position', function (params) {
   }
   sprite.position.x = params.pos.x
   sprite.position.y = params.pos.y
+})
+
+//pickup collected by player(can be this or another)
+socket.on('pickup_collected', function (pickupId) {
+  stage.removeChild(pickups[pickupId])
+  delete pickups[pickupId]
 })
 
 //other players leaving the game
