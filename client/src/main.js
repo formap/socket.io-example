@@ -25,15 +25,38 @@ bunny.anchor.set(0.5, 0.5)
 // Add the bunny to the scene we are building.
 stage.addChild(bunny);
 
+var keyboard = new KeyboardJS()
+
 // kick off the animation loop (defined below)
 animate();
 
 function animate() {
-    // start the timer for the next animation loop
-    requestAnimationFrame(animate);
-    // this is the main render call that makes pixi draw your container and its children.
-    renderer.render(stage);
+  // start the timer for the next animation loop
+  requestAnimationFrame(animate)
+
+  if (keyboard.char('W') || keyboard.keys[38]) {
+      console.log("pressed w")
+      bunny.position.y -= 5
+      socket.emit('update_position', bunny.position)
+  } else if(keyboard.char('D') || keyboard.keys[39]) {
+      bunny.position.x += 5
+      socket.emit('update_position', bunny.position)
+  } else if(keyboard.char('S') || keyboard.keys[40]) {
+      bunny.position.y += 5
+      socket.emit('update_position', bunny.position)
+  } else if(keyboard.char('A') || keyboard.keys[37]) {
+      bunny.position.x -= 5
+      socket.emit('update_position', bunny.position)
+  }
+
+  // this is the main render call that makes pixi draw your container and its children.
+  renderer.render(stage)
 }
+
+socket.on('player_disconnected', function (id) {
+  stage.removeChild(otherBunnies[id])
+  delete otherBunnies[id]
+})
 
 socket.on('update_position', function (pos) {
   var sprite = otherBunnies[pos.id]
@@ -51,10 +74,3 @@ socket.on('connect', function () {
   console.log('connected')
   socket.emit('update_position', bunny.position)
 })
-// npm install
-//
-// npm run <script-name>
-// npm run build
-//
-// node index.js
-// http-server . <-p port>
