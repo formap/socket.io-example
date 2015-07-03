@@ -2,6 +2,7 @@
 (function (global){
 var serverURL = 'localhost:9000'
 var socket = require('socket.io-client')(serverURL)
+var bunnySpeed = 5
 
 // You can use either `new PIXI.WebGLRenderer`, `new PIXI.CanvasRenderer`, or `PIXI.autoDetectRenderer`
 // which will try to choose the best renderer for the environment you are in.
@@ -18,6 +19,13 @@ var bunnyTexture = PIXI.Texture.fromImage('bunny.png');
 var bunny = new PIXI.Sprite(bunnyTexture);
 global.bunny = bunny
 var otherBunnies = {}
+
+var carrotTexture = PIXI.Texture.fromImage('carrot.png');
+var carrot = new PIXI.Sprite(carrotTexture);
+carrot.width = bunny.width
+carrot.height = bunny.height
+global.carrot = carrot
+var otherCarrots = {}
 
 // Setup the position and scale of the bunny
 bunny.position.x = Math.random() * 800
@@ -37,17 +45,16 @@ function animate() {
   requestAnimationFrame(animate)
 
   if (keyboard.char('W') || keyboard.keys[38]) {
-      console.log("pressed w")
-      bunny.position.y -= 5
+      bunny.position.y -= bunnySpeed
       socket.emit('update_position', bunny.position)
   } else if(keyboard.char('D') || keyboard.keys[39]) {
-      bunny.position.x += 5
+      bunny.position.x += bunnySpeed
       socket.emit('update_position', bunny.position)
   } else if(keyboard.char('S') || keyboard.keys[40]) {
-      bunny.position.y += 5
+      bunny.position.y += bunnySpeed
       socket.emit('update_position', bunny.position)
   } else if(keyboard.char('A') || keyboard.keys[37]) {
-      bunny.position.x -= 5
+      bunny.position.x -= bunnySpeed
       socket.emit('update_position', bunny.position)
   }
 
@@ -60,8 +67,13 @@ socket.on('player_disconnected', function (id) {
   delete otherBunnies[id]
 })
 
+socket.on('carrot_eaten', function (carrot) {
+  console.log('carrot is eaten')
+  stage.removeChild(otherCarrots[carrot.id])
+  delete otherCarrots[carrot]
+})
+
 socket.on('update_position', function (pos) {
-  console.log('update client pos init')
   var sprite = otherBunnies[pos.id]
   if (!sprite) {
     sprite = new PIXI.Sprite(bunnyTexture)
@@ -71,20 +83,23 @@ socket.on('update_position', function (pos) {
   }
   sprite.position.x = pos.x
   sprite.position.y = pos.y
-  console.log('update client pos end')
+})
+
+socket.on('update_carrot', function (carrot) {
+  var sprite = new PIXI.Sprite(carrotTexture)
+  sprite.width = bunny.width/2
+  sprite.height = bunny.height/2
+  stage.addChild(sprite)
+  otherCarrots[carrot.id] = sprite
+  sprite.anchor.set(0.5, 0.5)
+  sprite.position.x = carrot.x
+  sprite.position.y = carrot.y
 })
 
 socket.on('connect', function () {
   console.log('connected')
   socket.emit('update_position', bunny.position)
 })
-// npm install --save browserify
-//
-// npm run <script-name>
-// npm run buildi
-// 
-// node index.js
-// http-server . <-p port>
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 },{"socket.io-client":2}],2:[function(require,module,exports){
