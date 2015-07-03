@@ -66,9 +66,9 @@ socket.on('player_disconnected', function (id) {
 })
 
 socket.on('carrot_eaten', function (carrot) {
-  console.log('carrot is eaten')
+  console.log('carrot is eaten' + carrot.id)
   stage.removeChild(otherCarrots[carrot.id])
-  delete otherCarrots[carrot]
+  delete otherCarrots[carrot.id]
 })
 
 socket.on('update_position', function (pos) {
@@ -84,14 +84,17 @@ socket.on('update_position', function (pos) {
 })
 
 socket.on('update_carrot', function (carrot) {
-  var sprite = new PIXI.Sprite(carrotTexture)
-  sprite.width = bunny.width/2
-  sprite.height = bunny.height/2
-  stage.addChild(sprite)
-  otherCarrots[carrot.id] = sprite
-  sprite.anchor.set(0.5, 0.5)
-  sprite.position.x = carrot.x
-  sprite.position.y = carrot.y
+  var sprite = otherCarrots[carrot.id]
+  if (!sprite) {
+    sprite = new PIXI.Sprite(carrotTexture)
+    sprite.width = bunny.width/2
+    sprite.height = bunny.height/2
+    stage.addChild(sprite)
+    otherCarrots[carrot.id] = sprite
+    sprite.anchor.set(0.5, 0.5)
+    sprite.position.x = carrot.x
+    sprite.position.y = carrot.y
+  }
 })
 
 socket.on('connect', function () {

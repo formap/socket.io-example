@@ -4,7 +4,7 @@ var bunnies = {}
 var carrots = {}
 var width = 800
 var height = 600
-var margin = 100
+var margin = 50
 var bunnyHeight = 128
 var carrotHeight = 64
 var carrotNextId = 0
@@ -31,8 +31,7 @@ io.on('connection', function (socket) {
       distance = Math.sqrt(distance.x * distance.x + distance.y * distance.y);
       if(distance < carrotHeight) {
         console.log('carrot collision ' + carrot.x + ' ' + carrot.y)
-        socket.emit('carrot_eaten', carrot)
-        socket.broadcast.emit('carrot_eaten', carrot)
+        io.sockets.emit('carrot_eaten', carrot)
         console.log(carrot)
         delete carrots[carrotId]
       }
@@ -60,8 +59,9 @@ function spawn_carrots () {
   }
   carrotNextId = i
   show_carrots(io.sockets)
+  console.log(carrots)
 }
 
-setInterval(spawn_carrots, 5000);
+setInterval(spawn_carrots, 5 * 1000);
 
 console.log('server started on port', port)
